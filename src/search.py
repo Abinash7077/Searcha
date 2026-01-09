@@ -83,7 +83,7 @@ Rules:
 
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model="gemini-2.0-flash-exp",  # Free experimental model (your original choice)
+            model="gemini-3-flash-preview",  # Free experimental model (your original choice)
             contents=[
                 system_prompt,
                 request.query
