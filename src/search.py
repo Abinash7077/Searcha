@@ -16,7 +16,8 @@ if not API_KEY:
 client = genai.Client(api_key=API_KEY)
 
 # FastAPI app
-app = FastAPI()
+app = FastAPI(title="Search API", version="1.0.0")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -33,6 +34,25 @@ class SearchResponse(BaseModel):
     query: str
     response: str
 
+# Root endpoint
+@app.get("/")
+async def root():
+    return {
+        "message": "Search API is running",
+        "status": "ok",
+        "endpoints": {
+            "search": "/search (POST)",
+            "docs": "/docs",
+            "health": "/health"
+        }
+    }
+
+# Health check endpoint
+@app.get("/health")
+async def health():
+    return {"status": "healthy"}
+
+# Search endpoint
 @app.post("/search", response_model=SearchResponse)
 async def search(request: SearchRequest):
     try:
@@ -72,9 +92,9 @@ Rules:
         return SearchResponse(
             ok=False,
             query=request.query,
-            response=str(e)
+            response=f"Error: {str(e)}"
         )
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
