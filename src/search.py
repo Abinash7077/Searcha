@@ -1,6 +1,6 @@
 import os
 import asyncio
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -16,7 +16,11 @@ if not API_KEY:
 client = genai.Client(api_key=API_KEY)
 
 # FastAPI app
-app = FastAPI(title="Search API", version="1.0.0")
+app = FastAPI(
+    title="Search API",
+    version="1.0.0",
+    description="AI-powered search API using Google Gemini"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,21 +44,29 @@ async def root():
     return {
         "message": "Search API is running",
         "status": "ok",
+        "version": "1.0.0",
         "endpoints": {
-            "search": "/search (POST)",
-            "docs": "/docs",
-            "health": "/health"
+            "search": "POST /search - AI-powered search",
+            "docs": "GET /docs - API documentation",
+            "health": "GET /health - Health check"
         }
     }
 
 # Health check endpoint
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    return {
+        "status": "healthy",
+        "service": "Search API",
+        "api_key_configured": bool(API_KEY)
+    }
 
 # Search endpoint
 @app.post("/search", response_model=SearchResponse)
 async def search(request: SearchRequest):
+    if not request.query or not request.query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+    
     try:
         system_prompt = """
 You are a helpful AI assistant.
@@ -71,7 +83,7 @@ Rules:
 
         response = await asyncio.to_thread(
             client.models.generate_content,
-            model="gemini-3-flash-preview",
+            model="gemini-2.0-flash-exp",  # Free experimental model (your original choice)
             contents=[
                 system_prompt,
                 request.query
